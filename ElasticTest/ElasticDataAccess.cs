@@ -9,6 +9,7 @@ using ElasticLinq;
 using ElasticLinq.Mapping;
 using System.Security.Cryptography.X509Certificates;
 using Elasticsearch.Net;
+using Newtonsoft.Json;
 
 namespace ElasticTest
 {
@@ -24,7 +25,7 @@ namespace ElasticTest
         public ElasticDataAccess()
         {
             Uri node = new Uri("https://127.0.0.1:9200");
-            string defaultIndex = "people";
+            string defaultIndex = "result_set";
             var user = "tester";
             var pass = "tester";
 
@@ -51,6 +52,11 @@ namespace ElasticTest
             return await _Client.IndexDocumentAsync(person);
         }
 
+        public async Task<IndexResponse> IndexDocumentAsync(ElasticSearchDashboardModelJson model)
+        {            
+            return await _Client.IndexDocumentAsync(model);
+        }
+
         public string SearchDocs (string firstName)
         {
             var searchResponse = _Client.Search<Person>(s => s
@@ -58,6 +64,32 @@ namespace ElasticTest
                     .Match(m => m
                         .Field(f => f.firstName)
                         .Query(firstName)
+                        )
+                    )
+                );
+            return searchResponse.Documents.Count.ToString();
+        }
+
+        public string SearchDocs(int code)
+        {
+            var searchResponse = _Client.Search<ElasticSearchDashboardModel>(s => s
+                .Query(q => q
+                    .Range(m => m
+                        .Field(f => f.Code)
+                        .GreaterThanOrEquals(code)
+                        )
+                    )
+                );
+            return searchResponse.Documents.Count.ToString();
+        }
+
+        public string SearchDocsJson(string json)
+        {
+            var searchResponse = _Client.Search<ElasticSearchDashboardModelJson>(s => s
+                .Query(q => q
+                    .Match(m => m
+                        .Field(f => f.ResultSet)
+                        .Query(json)
                         )
                     )
                 );
@@ -110,4 +142,6 @@ namespace ElasticTest
     //        return request;
     //    }
     //}
+
+    
 }
